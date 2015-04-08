@@ -23,17 +23,6 @@ class CollectionEngine extends BaseEngine {
     private $collection;
 
     /**
-     * @var string
-     */
-    const OR_CONDITION = 'OR';
-
-    /**
-     * @var string
-     */
-    const AND_CONDITION = 'AND';
-
-
-    /**
      * @var array Different options
      */
     private $options = array(
@@ -148,8 +137,6 @@ class CollectionEngine extends BaseEngine {
 
         $toSearch = array();
 
-        $searchType = self::AND_CONDITION;
-
         // Map the searchColumns to the real columns
         $ii = 0;
         foreach($columns as $i => $col)
@@ -163,9 +150,6 @@ class CollectionEngine extends BaseEngine {
                 }
                 else
                 {
-                    if($value)
-                        $searchType = self::OR_CONDITION;
-
                     $toSearch[$ii] = $value;
                 }
             }
@@ -173,11 +157,11 @@ class CollectionEngine extends BaseEngine {
         }
 
         $self = $this;
-        $this->workingCollection = $this->workingCollection->filter(function($row) use ($value, $toSearch, $caseSensitive, $self, $searchType)
+        $this->workingCollection = $this->workingCollection->filter(function($row) use ($value, $toSearch, $caseSensitive, $self)
         {
-
-            for($i=0, $stack=array(), $nb=count($row); $i<$nb; $i++)
+            for($i = 0; $i < count($row); $i++)
             {
+                //$toSearch[$i] = value
                 if(!array_key_exists($i, $toSearch))
                     continue;
 
@@ -200,12 +184,12 @@ class CollectionEngine extends BaseEngine {
                     if($self->exactWordSearch)
                     {
                         if($toSearch[$i] === $search)
-                            $stack[$i] = true;
+                            return true;
                     }
                     else
                     {
                         if(str_contains($search,$toSearch[$i]))
-                            $stack[$i] = true;
+                            return true;
                     }
                 }
                 else
@@ -213,27 +197,14 @@ class CollectionEngine extends BaseEngine {
                     if($self->getExactWordSearch())
                     {
                         if(mb_strtolower($toSearch[$i]) === mb_strtolower($search))
-                            $stack[$i] = true;
+                            return true;
                     }
                     else
                     {
                         if(str_contains(mb_strtolower($search),mb_strtolower($toSearch[$i])))
-                            $stack[$i] = true;
+                            return true;
                     }
                 }
-            }
-
-            if($searchType == $self::AND_CONDITION)
-            {
-                $result = array_diff_key(array_filter($toSearch), $stack);
-
-                if(empty($result))
-                    return true;
-            }
-            else
-            {
-                if(!empty($stack))
-                    return true;
             }
         });
     }
